@@ -1,5 +1,3 @@
-# NDDS_TO_YOLOV3
-
 1)Put it in a folder. Let's name it (NDDS_data)
 2)Add yolov3.cfg to a folder (you can find it in darknet/cfg folder)
 3)Rename yolov3.cfg to yolo-obj.cfg
