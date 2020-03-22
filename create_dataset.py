@@ -26,6 +26,15 @@ def get_camera_res():
     height = jsonDataAsPythonValue['camera_settings'][0]['captured_image_size']['height']
     return width, height
 
+def get_image_res(file_name):
+    from PIL import Image
+    import os.path
+
+    filename = os.path.join(f'data_train/{file_name}')
+    img = Image.open(filename)
+    return img.size[0], img.size[1]
+    
+
 
 def is_visible_object(file_name):
     visible_objects = []
@@ -38,6 +47,8 @@ def is_visible_object(file_name):
     return visible_objects
 
 def calculate_coordinates(obj, image_width, image_height):
+    
+    
     x_top = obj['bounding_box']['top_left'][1]
     y_top = obj['bounding_box']['top_left'][0]
        
@@ -48,9 +59,14 @@ def calculate_coordinates(obj, image_width, image_height):
     y_final = (((y_bottom - y_top)/2+y_top)/image_height)
         
     width_final = ((x_bottom - x_top)/image_width)
-    height_final = (((y_bottom - y_top)/2)/image_height)
+    height_final = (((y_bottom - y_top))/image_height)
     
-    return "{:.6f} {:.6f} {:.6f} {:.6f}".format(x_final, y_final, width_final, height_final) 
+    if x_final <=1 and x_final > 0 and y_final <=1 and y_final > 0 and width_final <=1 and width_final > 0 and height_final <=1 and height_final > 0:
+        are_correct = True
+    else:
+        are_correct = False
+        
+    return are_correct, "{:.6f} {:.6f} {:.6f} {:.6f}".format(x_final, y_final, width_final, height_final) 
    
 def copy_image(image_name, path_in, path_out):
     shutil.copyfile(f'{path_in}{image_name}', f'{path_out}{image_name}')
@@ -92,7 +108,7 @@ def modify_yolo_cfg(num_classes):
             if line.split('=')[0].strip() == 'batch':
                 line = f'batch={64}\n'
             if line.split('=')[0].strip() == 'subdivisions':
-                line = f'subdivisions={16}\n'
+                line = f'subdivisions={32}\n'
             if line.split('=')[0].strip() == 'width':
                 line = f'width={416}\n'
             if line.split('=')[0].strip() == 'height':
@@ -117,9 +133,13 @@ def modify_yolo_cfg(num_classes):
 try: 
     os.mkdir('camera')
 except OSError as error: 
+    print(error)
+try: 
+    os.mkdir('backup')
+except OSError as error: 
     print(error)  
 try:
-    shutil.move('./data/_camera_settings.json', './camera/_camera_settings.json')
+    shutil.move('./data_train/_camera_settings.json', './camera/_camera_settings.json')
 except OSError as error: 
     print(error)
     
@@ -129,7 +149,7 @@ except OSError as error:
     print(error)
     
 try:
-    shutil.move('./data/_object_settings.json', './camera/_object_settings.json')
+    shutil.move('./data_train/_object_settings.json', './camera/_object_settings.json')
 except OSError as error: 
     print(error) 
 
@@ -140,6 +160,8 @@ except OSError as error:
 
 
 width_camera, height_camera = get_camera_res()
+
+width_image, height_image = get_image_res(os.listdir('./data_train/')[0])
 
 try:
     shutil.rmtree('results')
@@ -164,18 +186,7 @@ try:
 except OSError as error: 
     print(error) 
 
-try:
-    os.mkdir('results/labels')
-except OSError as error: 
-    print(error) 
-try:
-    os.mkdir('results/labels/train')
-except OSError as error: 
-    print(error) 
-try:
-    os.mkdir('results/labels/valid')
-except OSError as error: 
-    print(error) 
+
 
     
     
@@ -188,24 +199,25 @@ create_data_file(all_objects)
 modify_yolo_cfg(len(all_objects))
 
 
-for file_name in os.listdir('./data/'):
+for file_name in os.listdir('./data_train/'):
      if file_name.endswith('.json'):
-        file_name = './data/' + file_name
+        file_name = './data_train/' + file_name
         visible_objects = is_visible_object(file_name)
-        file_name = file_name.replace('./data/','')
+        file_name = file_name.replace('./data_train/','')
         
         png_name = file_name.replace('json','png')
-        copy_image(png_name, 'data/', 'results/images/train/')
+        copy_image(png_name, 'data_train/', 'results/images/train/')
         create_train_txt(png_name)
         
         
         file_name = file_name.replace('json','txt')
         
-        with open(f"./results/labels/train/{file_name}", "w+") as file:
+        with open(f"./results/images/train/{file_name}", "w+") as file:
             for obj in visible_objects:
                 num_class = all_objects[obj['class']]
-                dimensions = calculate_coordinates(obj, width_camera, height_camera)
-                file.write(f"{num_class} {dimensions}\n")
+                are_correct, dimensions = calculate_coordinates(obj, width_image, height_image)
+                if are_correct:
+                    file.write(f"{num_class} {dimensions}\n")
 
 
 for file_name in os.listdir('./data_valid/'):
@@ -221,8 +233,9 @@ for file_name in os.listdir('./data_valid/'):
         
         file_name = file_name.replace('json','txt')
         
-        with open(f"./results/labels/valid/{file_name}", "w+") as file:
+        with open(f"./results/images/valid/{file_name}", "w+") as file:
             for obj in visible_objects:
                 num_class = all_objects[obj['class']]
-                dimensions = calculate_coordinates(obj, width_camera, height_camera)
-                file.write(f"{num_class} {dimensions}\n")
+                are_correct, dimensions = calculate_coordinates(obj, width_image, height_image)
+                if are_correct:
+                    file.write(f"{num_class} {dimensions}\n")
