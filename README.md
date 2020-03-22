@@ -8,7 +8,7 @@ Designed to create training data for: https://github.com/AlexeyAB/darknet.git
 
 4) Put train images to /NDDS_data/data_train folder
 
-5) Put validation images to /NDDS/data_valid folder
+5) Put validation images to /NDDS_data/data_valid folder
 
 6) Put "darknet" compiled file in NDDS_data folder
 
