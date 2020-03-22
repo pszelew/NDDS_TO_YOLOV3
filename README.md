@@ -24,6 +24,6 @@ Designed to create training data for: https://github.com/AlexeyAB/darknet.git
 
 12) To run training you can use run_training.sh script. Just put it in NDDS_data folder and run it!
 
-13) Wait till you learn your network
+13) Wait till you teach your network
 
 14) Enjoy!
