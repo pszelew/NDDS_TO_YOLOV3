@@ -84,7 +84,7 @@ def create_data_file(all_objects):
         file.write(f'classes = {len(all_objects)}\n')
         file.write("train = results/train.txt\n")
         file.write("valid = results/valid.txt\n")
-        file.write("names = results/obj.names.txt\n")
+        file.write("names = results/obj.names\n")
         file.write("backup = backup\n")
 
 
